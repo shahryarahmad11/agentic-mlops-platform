@@ -85,3 +85,10 @@ mlflow server --backend-store-uri sqlite:///mlflow.db \
   --artifacts-destination ./mlartifacts --host 127.0.0.1 --port 5000
 export MLFLOW_TRACKING_URI=http://127.0.0.1:5000
 ```
+
+### Push 5: Training script and MLflow experiment tracking (Task 2 foundation)
+- Added `training/train.py`: trains a Random Forest on the DVC-tracked dataset and logs parameters, metrics (accuracy, macro-F1) and the model to MLflow
+- Every run records provenance as MLflow tags: DVC content hash, dataset version tag, the Git commit that introduced that dataset version, current Git commit, a dirty-tree flag, and whether the CSV on disk still matches the DVC pointer
+- Fixed model logging for MLflow 3.x by trusting only the scikit-learn `Tree` type when saving the model (no blanket trust)
+- Trained three configurations on each dataset version (500 and 1000 rows), producing six tracked runs
+- Evidence: `screenshots/02_mlflow_runs_comparison.png`, `screenshots/03_mlflow_run_provenance.png`
