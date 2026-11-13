@@ -70,3 +70,18 @@ No API keys, kubeconfigs or tokens are committed. Secrets are supplied via envir
 - Initialised DVC with a local remote (`../dvc-storage`) and telemetry disabled
 - Added `training/generate_data.py` (reproducible synthetic dataset, `--rows` and `--seed` arguments)
 - Tracked dataset v1 (500 rows) with DVC: only the `data/train.csv.dvc` pointer is in Git, and the CSV lives in the DVC cache and remote. The commit is tagged `data-v1`.
+
+### Push 4: Dataset v2, historical restoration and MLflow server
+- Created and tracked dataset v2 (1000 rows), tagged `data-v2`; `dvc status` detected the modification before it was tracked
+- Demonstrated reproducible restoration: checking out `data-v1` and running `dvc pull` restores the 500-row dataset, and returning to `main` restores the 1000-row dataset (evidence in `screenshots/01_dvc_version_restore.png`)
+- Verified the local MLflow tracking server (SQLite backend, local artifact store)
+
+## Launching Services (so far)
+
+MLflow tracking server (leave running in its own terminal):
+
+```bash
+mlflow server --backend-store-uri sqlite:///mlflow.db \
+  --artifacts-destination ./mlartifacts --host 127.0.0.1 --port 5000
+export MLFLOW_TRACKING_URI=http://127.0.0.1:5000
+```
