@@ -103,7 +103,13 @@ def main() -> None:
         )
         mlflow.set_tags(dataset_provenance())
         mlflow.log_metrics(metrics)
-        mlflow.sklearn.log_model(model, name="model", input_example=x_test.iloc[:2])
+        mlflow.sklearn.log_model(
+            model,
+            name="model",
+            input_example=x_test.iloc[:2],
+            # Model was trained moments ago by this script, so this one type is trusted.
+            skops_trusted_types=["sklearn.tree._tree.Tree"],
+        )
 
     print(json.dumps({"run_id": run.info.run_id, "experiment": args.experiment, **metrics}))
 
