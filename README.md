@@ -42,6 +42,8 @@ agentic-mlops-platform/
 curl -LsSf https://astral.sh/uv/install.sh | sh
 uv venv --python 3.12 .venv
 source .venv/bin/activate
+uv sync                # install locked dependencies (pyproject.toml + uv.lock)
+cp .env.example .env   # then edit .env locally; never commit it
 ```
 
 ## Security
@@ -55,3 +57,9 @@ No API keys, kubeconfigs or tokens are committed. Secrets are supplied via envir
 - Scaffolded the full project structure
 - Added a security-focused `.gitignore`
 - Created a Python 3.12 virtual environment with uv
+
+### Push 2: Dependencies and secret handling
+- Declared dependencies and dev tooling in `pyproject.toml` (FastAPI, MLflow, DVC, Kubernetes client, pytest, ruff) and locked them with `uv.lock`
+- Python pinned to 3.12; Apache Airflow 3 is intentionally kept out of this environment and will run separately, since the agent talks to it over its REST API
+- Added `.env.example` as the configuration contract; real values live in a git-ignored `.env`
+- Chose Gemini (free tier) as the agent's LLM; its API key is supplied only through an environment variable
