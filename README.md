@@ -63,3 +63,10 @@ No API keys, kubeconfigs or tokens are committed. Secrets are supplied via envir
 - Python pinned to 3.12; Apache Airflow 3 is intentionally kept out of this environment and will run separately, since the agent talks to it over its REST API
 - Added `.env.example` as the configuration contract; real values live in a git-ignored `.env`
 - Chose Gemini (free tier) as the agent's LLM; its API key is supplied only through an environment variable
+
+### Push 3: Configuration, logging and DVC (Task 1 foundation)
+- Added `agent/config.py`: validated, fail-fast settings with clear errors (invalid environment, unsafe `DEBUG` in production, bad numeric values, missing LLM key) and the API key held as a masked secret
+- Added `agent/logging_config.py`: structured JSON logs with request IDs and automatic redaction of keys and tokens
+- Initialised DVC with a local remote (`../dvc-storage`) and telemetry disabled
+- Added `training/generate_data.py` (reproducible synthetic dataset, `--rows` and `--seed` arguments)
+- Tracked dataset v1 (500 rows) with DVC: only the `data/train.csv.dvc` pointer is in Git, and the CSV lives in the DVC cache and remote. The commit is tagged `data-v1`.
