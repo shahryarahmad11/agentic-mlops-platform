@@ -1,0 +1,44 @@
+# Restricted identity for the agent: it can only act inside the "mlops" namespace.
+# Reads: pods, logs, events, services, endpoints, deployments.
+# Writes: patch deployments (rollout restart / scale) and nothing else. No delete, no secrets.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mlops-agent
+  namespace: mlops
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: mlops-agent
+  namespace: mlops
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "events", "services", "endpoints", "configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["services/proxy"]
+    verbs: ["get"]
+  - apiGroups: ["discovery.k8s.io"]
+    resources: ["endpointslices"]
+    verbs: ["get", "list"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/scale"]
+    verbs: ["patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: mlops-agent
+  namespace: mlops
+subjects:
+  - kind: ServiceAccount
+    name: mlops-agent
+    namespace: mlops
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: mlops-agent

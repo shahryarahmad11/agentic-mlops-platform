@@ -1,0 +1,9 @@
+# Pinned to the training environment so the exported model loads with the same versions.
+fastapi==0.162.7
+uvicorn==0.54.0
+scikit-learn==1.9.1
+joblib==1.6.0
+pandas==3.1.1
+numpy==2.5.4
+scipy==1.18.1
+pydantic==2.14.3
