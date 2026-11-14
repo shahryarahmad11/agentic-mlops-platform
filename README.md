@@ -92,3 +92,11 @@ export MLFLOW_TRACKING_URI=http://127.0.0.1:5000
 - Fixed model logging for MLflow 3.x by trusting only the scikit-learn `Tree` type when saving the model (no blanket trust)
 - Trained three configurations on each dataset version (500 and 1000 rows), producing six tracked runs
 - Evidence: `screenshots/02_mlflow_runs_comparison.png`, `screenshots/03_mlflow_run_provenance.png`
+
+
+### Push 6: Tool contract, registry, DVC tools and MLflow tools (Tasks 1 and 2)
+- Added `agent/schemas.py`: structured tool inputs and outputs (`ToolResult` with status, error, duration and request ID) and the chat response model that separates facts, uncertainties and recommended actions
+- Added the tool registry in `agent/tools/__init__.py`: argument validation, per-call timeouts, exception mapping (unavailable, timeout, invalid, forbidden), confirmation enforcement for state-changing tools, and a structured log line for every call
+- Added 7 read-only DVC tools (`agent/tools/dvc_tools.py`): list datasets, current version, version history, compare versions, detect changes, reproduction instructions, and hash-to-version lookup. Only allow-listed git/dvc subcommands run, without a shell, and refs and paths are validated
+- Added 7 read-only MLflow tools (`agent/tools/mlflow_tools.py`): experiments, runs, run details (including logged models), best run, run comparison, experiment comparison, and registry info. Rankings always carry caveats and are never treated as a production decision
+- Added `tests/demo_tools.py` to run real tools through the registry: `python -m tests.demo_tools mlflow`
