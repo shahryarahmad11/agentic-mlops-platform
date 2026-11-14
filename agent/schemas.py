@@ -38,6 +38,7 @@ class ToolSpec(BaseModel):
     source: ToolSource
     read_only: bool = True
     requires_confirmation: bool = False
+    timeout_seconds: float | None = None  # overrides the caller's timeout (long-running tools)
     parameters: dict[str, Any] = Field(default_factory=lambda: {"type": "object", "properties": {}})
 
 
@@ -78,6 +79,7 @@ class ToolResult(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=2000)
+    include_evidence: bool = False  # return the raw tool results with the answer
 
 
 class ToolCallRecord(BaseModel):
@@ -88,12 +90,47 @@ class ToolCallRecord(BaseModel):
     status: ToolStatus
     duration_ms: float
     request_id: str | None = None
+    arguments: dict[str, Any] = Field(default_factory=dict)
+    error: str | None = None
+
+
+class Fact(BaseModel):
+    """A claim plus the tools whose successful results support it."""
+
+    statement: str
+    sources: list[str] = Field(default_factory=list)
+
+
+class PendingAction(BaseModel):
+    """A state-changing tool call the agent proposed; it runs only after user approval."""
+
+    action_id: str
+    tool: str
+    arguments: dict[str, Any]
+    description: str
+    request_id: str | None = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class ChatResponse(BaseModel):
     request_id: str
     answer: str
-    facts: list[str] = Field(default_factory=list)  # each backed by a tool result
+    facts: list[Fact] = Field(default_factory=list)  # each backed by a successful tool result
     uncertainties: list[str] = Field(default_factory=list)
     recommended_actions: list[str] = Field(default_factory=list)
+    pending_actions: list[PendingAction] = Field(default_factory=list)
     tool_calls: list[ToolCallRecord] = Field(default_factory=list)
+    evidence: list[ToolResult] | None = None
+
+
+class ConfirmRequest(BaseModel):
+    approve: bool
+
+
+class ConfirmResponse(BaseModel):
+    action_id: str
+    tool: str
+    arguments: dict[str, Any] = Field(default_factory=dict)
+    approved: bool
+    result: ToolResult | None = None
+    message: str

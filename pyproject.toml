@@ -16,6 +16,8 @@ dependencies = [
     "pandas>=2.2",
     "scikit-learn>=1.5",
     "pyyaml>=6.0",
+    "google-genai>=3.3.0",
+    "python-dotenv>=1.2.4",
 ]
 
 [dependency-groups]
@@ -33,6 +35,11 @@ package = false
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+extend-exclude = ["mlartifacts", "pipeline_artifacts"]
+
+[tool.ruff.lint.isort]
+# The repo's kubernetes/ manifest folder must not make the client look first-party.
+known-third-party = ["kubernetes"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

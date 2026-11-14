@@ -30,6 +30,8 @@ PROVENANCE_TAGS = (
     "git_commit",
     "git_dirty",
     "data_matches_pointer",
+    "quality_gate",  # set by the Airflow pipeline's quality_gate task
+    "airflow_run_id",
 )
 READINESS_NOTE = (
     "A ranking by one metric is evidence, not approval: latency, robustness, drift, fairness "

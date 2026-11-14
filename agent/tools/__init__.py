@@ -124,6 +124,7 @@ class ToolRegistry:
                 f"Tool '{name}' changes state and needs explicit user confirmation",
             )
 
+        timeout = spec.timeout_seconds or timeout
         executor = ThreadPoolExecutor(max_workers=1)
         try:
             raw = executor.submit(func, **arguments).result(timeout=timeout)

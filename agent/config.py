@@ -27,6 +27,15 @@ class Settings(BaseSettings):
     llm_timeout_seconds: float = Field(default=30.0, gt=0, le=300)
     gemini_api_key: SecretStr | None = None  # secret: never logged or printed
 
+    # Agent behaviour and policy
+    agent_max_steps: int = Field(default=8, ge=1, le=20)  # LLM turns per request
+    agent_max_tool_calls: int = Field(default=20, ge=1, le=60)
+    tool_timeout_seconds: float = Field(default=20.0, gt=0, le=120)
+    model_max_age_days: int = Field(default=30, ge=1, le=365)  # retraining freshness policy
+    pending_action_ttl_seconds: int = Field(default=600, ge=30, le=3600)
+    k8s_namespace: str = "mlops"
+    k8s_allowed_namespaces: str = "mlops"
+
     @field_validator("app_env", mode="before")
     @classmethod
     def _normalize_env(cls, v):
