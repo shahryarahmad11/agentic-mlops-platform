@@ -13,6 +13,7 @@ Safety:
 import json
 import os
 import re
+import time
 from datetime import UTC, datetime
 from functools import lru_cache
 from typing import Any
@@ -209,6 +210,41 @@ def _deployment_summary(dep: Any) -> dict[str, Any]:
     }
 
 
+def _configmaps(core: Any, ns: str, dep: Any) -> list[dict[str, Any]]:
+    """ConfigMaps the Deployment's containers load, with data and last modification.
+
+    ConfigMaps hold only non-sensitive settings by policy; values are still redacted.
+    """
+    names: set[str] = set()
+    for container in dep.spec.template.spec.containers:
+        for source in container.env_from or []:
+            if source.config_map_ref and source.config_map_ref.name:
+                names.add(source.config_map_ref.name)
+        for var in container.env or []:
+            ref = var.value_from.config_map_key_ref if var.value_from else None
+            if ref and ref.name:
+                names.add(ref.name)
+    found = []
+    for name in sorted(names):
+        try:
+            cm = _call(core.read_namespaced_config_map, name, ns)
+        except (ToolInputError, ToolPermissionError) as exc:
+            found.append({"name": name, "error": str(exc)})
+            continue
+        changes = [
+            {"manager": f.manager, "operation": f.operation, "time": _iso(f.time)}
+            for f in (cm.metadata.managed_fields or [])
+        ]
+        found.append(
+            {
+                "name": name,
+                "data": {k: redact(str(v)) for k, v in (cm.data or {}).items()},
+                "changes": sorted(changes, key=lambda c: c["time"] or ""),
+            }
+        )
+    return found
+
+
 def _selector(labels: dict[str, str]) -> str:
     return ",".join(f"{k}={v}" for k, v in sorted(labels.items()))
 
@@ -278,6 +314,24 @@ def _service_get(core: Any, ns: str, service: str, path: str) -> dict[str, Any]:
 def _log_tail(core: Any, ns: str, pod: str, tail: int, previous: bool = False) -> list[str]:
     text = _call(core.read_namespaced_pod_log, pod, ns, tail_lines=tail, previous=previous)
     return [redact(line)[:LOG_LINE_CHARS] for line in (text or "").splitlines()]
+
+
+_ERROR_RE = re.compile(
+    r"error|exception|traceback|failed|fatal|no such file|denied|killed", re.IGNORECASE
+)
+_PROBE_RE = re.compile(r'"GET /(healthz|readyz)')
+
+
+def _diagnostic_logs(core: Any, ns: str, pod: str, previous: bool) -> dict[str, list[str]]:
+    """Error lines first: probe access logs every few seconds would otherwise bury them."""
+    lines = _log_tail(core, ns, pod, MAX_LOG_LINES, previous)
+    errors = [line for line in lines if _ERROR_RE.search(line) and not _PROBE_RE.search(line)]
+    recent = [line for line in lines if not _PROBE_RE.search(line)][-8:]
+    return {
+        "error_lines": errors[-10:],
+        "recent_non_probe_lines": recent,
+        "probe_lines_skipped": sum(1 for line in lines if _PROBE_RE.search(line)),
+    }
 
 
 _NS_PARAM = {"type": "string", "description": "Kubernetes namespace (default: mlops)"}
@@ -511,7 +565,8 @@ def k8s_deployed_version(
         description=(
             "End-to-end health check of the prediction API: Deployment rollout, Pod readiness "
             "and restarts, Service endpoints, live readiness probe, warning events and log tails "
-            "of unhealthy Pods. Use for 'why is the API unavailable?'."
+            "of unhealthy Pods, and the ConfigMaps the Pods load (with who changed them and "
+            "when). Use for 'why is the API unavailable?'."
         ),
         source=ToolSource.KUBERNETES,
         parameters={
@@ -529,9 +584,9 @@ def k8s_diagnose_service(
 ) -> dict[str, Any]:
     ns = _namespace(namespace)
     core, apps, discovery = _apis()
-    dep = _deployment_summary(
-        _call(apps.read_namespaced_deployment, _name(deployment, "deployment"), ns)
-    )
+    raw_dep = _call(apps.read_namespaced_deployment, _name(deployment, "deployment"), ns)
+    dep = _deployment_summary(raw_dep)
+    config = _configmaps(core, ns, raw_dep)
     pods = [
         _pod_summary(p)
         for p in _call(
@@ -546,9 +601,9 @@ def k8s_diagnose_service(
     for pod in unhealthy[:3]:
         try:
             crashed = any(c["last_termination"] for c in pod["containers"])
-            pod["log_tail"] = _log_tail(core, ns, pod["name"], 15, previous=crashed)
+            pod["logs"] = _diagnostic_logs(core, ns, pod["name"], previous=crashed)
         except (ToolInputError, RuntimeError, ConnectionError) as exc:
-            pod["log_tail"] = [f"logs unavailable: {exc}"]
+            pod["logs"] = {"error_lines": [f"logs unavailable: {exc}"]}
 
     findings: list[str] = []
     if endpoints["ready_endpoints"] == 0:
@@ -575,8 +630,59 @@ def k8s_diagnose_service(
         "deployment": dep,
         "service": {"name": service, **endpoints, "live_readyz": readiness},
         "pods": pods,
+        "config": config,
         "recent_warning_events": events,
     }
+
+
+ROLLOUT_WAIT_MAX_SECONDS = 300
+
+
+@registry.register(
+    ToolSpec(
+        name="k8s_wait_for_rollout",
+        description=(
+            "Wait until a Deployment rollout completes (all updated replicas Ready) or the "
+            "timeout passes. Use after a restart/scale before judging the result. Read-only."
+        ),
+        source=ToolSource.KUBERNETES,
+        timeout_seconds=ROLLOUT_WAIT_MAX_SECONDS + 30,
+        parameters={
+            "type": "object",
+            "properties": {
+                "deployment": {"type": "string", "description": f"default {DEFAULT_APP}"},
+                "namespace": _NS_PARAM,
+                "timeout_seconds": {
+                    "type": "integer",
+                    "description": f"10-{ROLLOUT_WAIT_MAX_SECONDS}, default 180",
+                },
+            },
+        },
+    )
+)
+def k8s_wait_for_rollout(
+    deployment: str = DEFAULT_APP, namespace: str | None = None, timeout_seconds: int = 180
+) -> dict[str, Any]:
+    ns = _namespace(namespace)
+    _name(deployment, "deployment")
+    if not 10 <= timeout_seconds <= ROLLOUT_WAIT_MAX_SECONDS:
+        raise ToolInputError(f"timeout_seconds must be between 10 and {ROLLOUT_WAIT_MAX_SECONDS}")
+    _, apps, _ = _apis()
+    started = time.monotonic()
+    while True:
+        dep = _deployment_summary(_call(apps.read_namespaced_deployment, deployment, ns))
+        waited = round(time.monotonic() - started, 1)
+        if dep["rollout_complete"] and dep["ready_replicas"] == dep["desired_replicas"]:
+            return {"namespace": ns, "completed": True, "waited_seconds": waited, **dep}
+        if waited >= timeout_seconds:
+            return {
+                "namespace": ns,
+                "completed": False,
+                "waited_seconds": waited,
+                "note": "Rollout still incomplete when the wait ended.",
+                **dep,
+            }
+        time.sleep(3)
 
 
 # ------------------------------------------------------------- state-changing tools
@@ -621,7 +727,7 @@ def k8s_restart_deployment(deployment: str, namespace: str | None = None) -> dic
         "deployment": deployment,
         "action": "rollout_restart",
         "restarted_at": now,
-        "next_step": "Check k8s_diagnose_service to confirm the new Pods become Ready.",
+        "next_step": "Call k8s_wait_for_rollout, then k8s_diagnose_service to verify health.",
     }
 
 

@@ -28,6 +28,16 @@ FEATURES = [f"feature_{i}" for i in range(5)]
 logging.basicConfig(stream=sys.stdout, level=LOG_LEVEL, format="%(message)s")
 log = logging.getLogger("inference")
 
+
+class _SkipProbes(logging.Filter):
+    """Probe requests every few seconds would bury real errors in the access log."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return not any(p in record.getMessage() for p in ("/healthz", "/readyz"))
+
+
+logging.getLogger("uvicorn.access").addFilter(_SkipProbes())
+
 STATE: dict[str, Any] = {"model": None, "metadata": {}, "load_error": None, "started": time.time()}
 
 

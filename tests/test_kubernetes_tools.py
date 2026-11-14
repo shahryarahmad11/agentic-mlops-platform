@@ -58,7 +58,17 @@ def deployment(ready=2):
             template=k8s.V1PodTemplateSpec(
                 spec=k8s.V1PodSpec(
                     containers=[
-                        k8s.V1Container(name="prediction-api", image="prediction-api:1.0.0")
+                        k8s.V1Container(
+                            name="prediction-api",
+                            image="prediction-api:1.0.0",
+                            env_from=[
+                                k8s.V1EnvFromSource(
+                                    config_map_ref=k8s.V1ConfigMapEnvSource(
+                                        name="prediction-api-config"
+                                    )
+                                )
+                            ],
+                        )
                     ]
                 )
             ),
@@ -88,8 +98,9 @@ def cluster(monkeypatch):
     core, apps, discovery = MagicMock(), MagicMock(), MagicMock()
     monkeypatch.setattr(kt, "_apis", lambda: (core, apps, discovery))
     core.list_namespaced_event.return_value = MagicMock(items=[])
-    core.read_namespaced_pod_log.return_value = (
-        "model_load_failed: No such file /app/model/x.joblib"
+    core.read_namespaced_pod_log.return_value = "\n".join(
+        ['{"event": "model_load_failed", "error": "No such file /app/model/x.joblib"}']
+        + ['INFO: 10.0.0.1 - "GET /readyz HTTP/1.1" 503 Service Unavailable'] * 50
     )
     svc = MagicMock()
     svc.spec.ports = [MagicMock(name="http", port=80)]
@@ -126,12 +137,18 @@ def test_diagnose_reports_unavailable_api_with_evidence(registry, cluster):
         items=[pod("p1", ready=False), pod("p2", ready=False)]
     )
     discovery.list_namespaced_endpoint_slice.return_value = endpoint_slice(0, 2)
+    core.read_namespaced_config_map.return_value = k8s.V1ConfigMap(
+        metadata=k8s.V1ObjectMeta(name="prediction-api-config"),
+        data={"MODEL_PATH": "/app/model/x.joblib"},
+    )
     result = registry.execute("k8s_diagnose_service", {})
     data = result.data
     assert result.ok and data["available"] is False
     assert any("0 ready endpoints" in f for f in data["findings"])
     assert data["service"]["live_readyz"]["http_status"] == 503
-    assert "model_load_failed" in data["pods"][0]["log_tail"][0]
+    logs = data["pods"][0]["logs"]  # the error survives 50 lines of probe noise
+    assert "model_load_failed" in logs["error_lines"][0] and logs["probe_lines_skipped"] == 50
+    assert data["config"][0]["data"]["MODEL_PATH"] == "/app/model/x.joblib"
 
 
 def test_state_change_without_confirmation_is_rejected(registry, cluster):
@@ -191,3 +208,10 @@ def test_missing_kubeconfig_is_unavailable(registry, monkeypatch):
 
     monkeypatch.setattr(kt, "_apis", no_config)
     assert registry.execute("k8s_list_deployments", {}).status == ToolStatus.UNAVAILABLE
+
+
+def test_wait_for_rollout_reports_completion(registry, cluster):
+    _, apps, _ = cluster
+    apps.read_namespaced_deployment.return_value = deployment(ready=2)
+    result = registry.execute("k8s_wait_for_rollout", {"timeout_seconds": 10})
+    assert result.ok and result.data["completed"] is True

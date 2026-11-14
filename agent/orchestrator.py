@@ -306,7 +306,10 @@ class Orchestrator:
         return _payload_for_model(result)
 
     def _build_response(self, rid, final, results, records, pending, notes) -> ChatResponse:
-        succeeded = {r.tool for r in results if r.ok}
+        # A proposed (pending) action is itself a verified fact: the system created it.
+        succeeded = {
+            r.tool for r in results if r.ok or r.status == ToolStatus.CONFIRMATION_REQUIRED
+        }
         facts, uncertainties = [], []
         for fact in _facts(final.get("facts")):
             if fact.sources and set(fact.sources) <= succeeded:
@@ -371,7 +374,8 @@ class Orchestrator:
             f"{confirmation.tool}({json.dumps(confirmation.arguments)}) -> "
             f"status '{outcome.status.value}': {json.dumps(detail, default=str)[:4000]}\n\n"
             "Continue the original request with tools (for a triggered DAG run call "
-            "airflow_wait_for_run, then airflow_failed_tasks if it failed). Do not trigger again. "
+            "airflow_wait_for_run, then airflow_failed_tasks if it failed; after a restart or scale "
+            "call k8s_wait_for_rollout before checking health). Do not repeat the action. "
             f"You may cite '{confirmation.tool}' as a source for the execution result."
         )
         return self.chat(

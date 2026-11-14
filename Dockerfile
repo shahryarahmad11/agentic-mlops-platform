@@ -1,13 +1,16 @@
+# syntax=docker/dockerfile:1
 # Inference service image (FastAPI + scikit-learn model exported from MLflow).
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_DEFAULT_TIMEOUT=300 \
+    PIP_RETRIES=10
 
 WORKDIR /app
 COPY serving/requirements.txt ./requirements.txt
-RUN pip install -r requirements.txt
+# The cache mount keeps downloaded wheels between builds (slow or flaky networks).
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
 
 COPY serving/app.py ./serving/app.py
 COPY serving/__init__.py ./serving/__init__.py

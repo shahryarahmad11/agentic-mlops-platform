@@ -109,7 +109,7 @@ class GeminiClient:
             http_options=types.HttpOptions(
                 timeout=int(timeout_seconds * 1000),
                 retry_options=types.HttpRetryOptions(
-                    attempts=3, initial_delay=2.0, http_status_codes=[429, 500, 503]
+                    attempts=3, initial_delay=2.0, http_status_codes=[429, 500, 503, 504]
                 ),
             ),
         )
