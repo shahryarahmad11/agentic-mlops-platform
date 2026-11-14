@@ -1,0 +1,8 @@
+# `dvc repro` re-runs training whenever the tracked dataset or the training code changes.
+# (Needs the MLflow server running; the Airflow DAG is the orchestrated equivalent.)
+stages:
+  train:
+    cmd: python training/train.py --n-estimators 100 --max-depth 5
+    deps:
+      - data/train.csv
+      - training/train.py

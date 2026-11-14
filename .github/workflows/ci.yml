@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    env:
+      APP_ENV: test               # no LLM key needed; every external system is mocked
+      MLFLOW_DISABLE_AGENT_HINT: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - name: Install locked dependencies
+        run: uv sync --frozen
+      - name: Lint (ruff)
+        run: uv run ruff check .
+      - name: Tests (pytest, external services mocked)
+        run: uv run pytest -q --cov=agent --cov=serving --cov-report=term-missing
+
+  inference-image:
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Create a placeholder model (the real one is exported from MLflow)
+        run: |
+          pip install -q -r serving/requirements.txt
+          python - <<'PY'
+          import json, joblib, pandas as pd
+          from sklearn.tree import DecisionTreeClassifier
+          cols = [f"feature_{i}" for i in range(5)]
+          X = pd.DataFrame([[0] * 5, [1] * 5], columns=cols)
+          joblib.dump(DecisionTreeClassifier().fit(X, [0, 1]), "serving/model/model.joblib")
+          json.dump({"mlflow_run_id": "ci-placeholder"}, open("serving/model/metadata.json", "w"))
+          PY
+      - name: Build the inference image
+        run: docker build -t prediction-api:ci .
+      - name: Smoke test the container
+        run: |
+          docker run -d --name api -p 8000:8000 prediction-api:ci
+          for i in $(seq 1 20); do curl -fs localhost:8000/readyz && break; sleep 1; done
+          curl -fs localhost:8000/version
+          curl -fs -X POST localhost:8000/predict -H 'content-type: application/json' \
+            -d '{"instances": [[1,1,1,1,1]]}'
