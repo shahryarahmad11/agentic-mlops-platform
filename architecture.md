@@ -98,6 +98,7 @@ and the latest pipeline run (`airflow_get_dag_runs`).
 | `k8s_unhealthy_pods` | kubernetes | namespace? | read-only |
 | `k8s_deployed_version` | kubernetes | namespace?, deployment?, service? | read-only |
 | `k8s_diagnose_service` | kubernetes | namespace?, deployment?, service? | read-only |
+| `k8s_wait_for_rollout` | kubernetes | deployment?, namespace?, timeout_seconds? | read-only |
 | `k8s_restart_deployment` | kubernetes | deployment, namespace? | **writes, needs approval** |
 | `k8s_scale_deployment` | kubernetes | deployment, replicas, namespace? | **writes, needs approval** |
 

@@ -1,0 +1,274 @@
+{
+  "question": "Why is my prediction API unavailable?",
+  "response": {
+    "request_id": "req-0b9f0d6dd17a",
+    "answer": "The prediction API is unavailable because the application is failing to load its configured model file. Specifically, the pods are failing their readiness probes (returning HTTP 503) due to a missing model file error in the container logs: `[Errno 2] No such file or directory: '/app/model/model_v2.joblib'`. The ConfigMap `prediction-api-config` specifies `MODEL_PATH: /app/model/model_v2.joblib`, but that file does not exist inside the container.",
+    "facts": [
+      {
+        "statement": "The prediction service has 0 ready endpoints and 0/2 ready replicas in the mlops namespace.",
+        "sources": [
+          "k8s_diagnose_service"
+        ]
+      },
+      {
+        "statement": "Container logs show model load failure: '[Errno 2] No such file or directory: '/app/model/model_v2.joblib''.",
+        "sources": [
+          "k8s_diagnose_service"
+        ]
+      },
+      {
+        "statement": "Readiness probes are failing with HTTP 503 because no endpoints are available for the service.",
+        "sources": [
+          "k8s_diagnose_service"
+        ]
+      },
+      {
+        "statement": "The ConfigMap 'prediction-api-config' is configured with MODEL_PATH set to '/app/model/model_v2.joblib'.",
+        "sources": [
+          "k8s_diagnose_service"
+        ]
+      }
+    ],
+    "uncertainties": [
+      "Whether model_v2.joblib was omitted from the container image build or if it should be mounted via a volume/storage that is currently missing or misconfigured."
+    ],
+    "recommended_actions": [
+      "Verify whether the model file name in the ConfigMap (`prediction-api-config`) needs to be corrected to match an existing model file in the image or volume.",
+      "Check the container image build process to ensure model artifact files are correctly bundled or mounted."
+    ],
+    "pending_actions": [],
+    "tool_calls": [
+      {
+        "tool": "k8s_diagnose_service",
+        "source": "kubernetes",
+        "status": "success",
+        "duration_ms": 195.3,
+        "request_id": "req-0b9f0d6dd17a",
+        "arguments": {},
+        "error": null
+      }
+    ],
+    "evidence": [
+      {
+        "tool": "k8s_diagnose_service",
+        "source": "kubernetes",
+        "status": "success",
+        "request_id": "req-0b9f0d6dd17a",
+        "duration_ms": 195.3,
+        "data": {
+          "namespace": "mlops",
+          "available": false,
+          "findings": [
+            "Service 'prediction-api' has 0 ready endpoints: requests cannot be served",
+            "Deployment has 0/2 ready replicas",
+            "Rollout is not complete (new Pods are not becoming available)",
+            "Pod prediction-api-7bc46dc47c-bv575: running but not Ready (readiness probe failing or container waiting)",
+            "Pod prediction-api-7bc46dc47c-pm7g4: running but not Ready (readiness probe failing or container waiting)",
+            "Live /readyz through the Service returned HTTP 503"
+          ],
+          "deployment": {
+            "name": "prediction-api",
+            "desired_replicas": 2,
+            "ready_replicas": 0,
+            "available_replicas": 0,
+            "updated_replicas": 2,
+            "unavailable_replicas": 2,
+            "rollout_complete": false,
+            "images": [
+              "prediction-api:1.0.0"
+            ],
+            "app_version": "1.0.0",
+            "revision": "1",
+            "selector": {
+              "app.kubernetes.io/name": "prediction-api"
+            },
+            "conditions": [
+              {
+                "type": "Progressing",
+                "status": "True",
+                "reason": "NewReplicaSetAvailable",
+                "message": "ReplicaSet \"prediction-api-7bc46dc47c\" has successfully progressed."
+              },
+              {
+                "type": "Available",
+                "status": "False",
+                "reason": "MinimumReplicasUnavailable",
+                "message": "Deployment does not have minimum availability."
+              }
+            ]
+          },
+          "service": {
+            "name": "prediction-api",
+            "ready_endpoints": 0,
+            "not_ready_endpoints": 2,
+            "live_readyz": {
+              "http_status": 503,
+              "body": {
+                "kind": "Status",
+                "apiVersion": "v1",
+                "metadata": {},
+                "status": "Failure",
+                "message": "no endpoints available for service \"prediction-api:http\"",
+                "reason": "ServiceUnavailable",
+                "code": 503
+              }
+            }
+          },
+          "pods": [
+            {
+              "name": "prediction-api-7bc46dc47c-bv575",
+              "phase": "Running",
+              "ready": false,
+              "healthy": false,
+              "restarts": 0,
+              "node": "mlops-control-plane",
+              "started_at": "2026-11-14T14:36:44+00:00",
+              "app_version": "1.0.0",
+              "containers": [
+                {
+                  "name": "prediction-api",
+                  "image": "docker.io/library/prediction-api:1.0.0",
+                  "ready": false,
+                  "restart_count": 0,
+                  "state": "running",
+                  "reason": null,
+                  "message": null,
+                  "last_termination": null
+                }
+              ],
+              "problems": [
+                "running but not Ready (readiness probe failing or container waiting)"
+              ],
+              "logs": {
+                "error_lines": [
+                  "{\"event\": \"model_load_failed\", \"app_version\": \"1.0.0\", \"model_path\": \"/app/model/model_v2.joblib\", \"error\": \"[Errno 2] No such file or directory: '/app/model/model_v2.joblib'\"}"
+                ],
+                "recent_non_probe_lines": [
+                  "INFO:     Started server process [1]",
+                  "INFO:     Waiting for application startup.",
+                  "{\"event\": \"model_load_failed\", \"app_version\": \"1.0.0\", \"model_path\": \"/app/model/model_v2.joblib\", \"error\": \"[Errno 2] No such file or directory: '/app/model/model_v2.joblib'\"}",
+                  "INFO:     Application startup complete.",
+                  "INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)"
+                ],
+                "probe_lines_skipped": 65
+              }
+            },
+            {
+              "name": "prediction-api-7bc46dc47c-pm7g4",
+              "phase": "Running",
+              "ready": false,
+              "healthy": false,
+              "restarts": 0,
+              "node": "mlops-control-plane",
+              "started_at": "2026-11-14T14:36:44+00:00",
+              "app_version": "1.0.0",
+              "containers": [
+                {
+                  "name": "prediction-api",
+                  "image": "docker.io/library/prediction-api:1.0.0",
+                  "ready": false,
+                  "restart_count": 0,
+                  "state": "running",
+                  "reason": null,
+                  "message": null,
+                  "last_termination": null
+                }
+              ],
+              "problems": [
+                "running but not Ready (readiness probe failing or container waiting)"
+              ],
+              "logs": {
+                "error_lines": [
+                  "{\"event\": \"model_load_failed\", \"app_version\": \"1.0.0\", \"model_path\": \"/app/model/model_v2.joblib\", \"error\": \"[Errno 2] No such file or directory: '/app/model/model_v2.joblib'\"}"
+                ],
+                "recent_non_probe_lines": [
+                  "INFO:     Started server process [1]",
+                  "INFO:     Waiting for application startup.",
+                  "{\"event\": \"model_load_failed\", \"app_version\": \"1.0.0\", \"model_path\": \"/app/model/model_v2.joblib\", \"error\": \"[Errno 2] No such file or directory: '/app/model/model_v2.joblib'\"}",
+                  "INFO:     Application startup complete.",
+                  "INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)"
+                ],
+                "probe_lines_skipped": 64
+              }
+            }
+          ],
+          "config": [
+            {
+              "name": "prediction-api-config",
+              "data": {
+                "APP_VERSION": "1.0.0",
+                "LOG_LEVEL": "INFO",
+                "MODEL_METADATA_PATH": "/app/model/metadata.json",
+                "MODEL_PATH": "/app/model/model_v2.joblib"
+              },
+              "changes": [
+                {
+                  "manager": "kubectl-client-side-apply",
+                  "operation": "Update",
+                  "time": "2026-11-14T14:28:55+00:00"
+                },
+                {
+                  "manager": "kubectl-patch",
+                  "operation": "Update",
+                  "time": "2026-11-14T14:36:43+00:00"
+                }
+              ]
+            }
+          ],
+          "recent_warning_events": [
+            {
+              "type": "Warning",
+              "reason": "Unhealthy",
+              "object": "Pod/prediction-api-7bc46dc47c-pm7g4",
+              "message": "Readiness probe failed: HTTP probe failed with statuscode: 503",
+              "count": 23,
+              "last_seen": "2026-11-14T14:38:53+00:00"
+            },
+            {
+              "type": "Warning",
+              "reason": "Unhealthy",
+              "object": "Pod/prediction-api-7bc46dc47c-bv575",
+              "message": "Readiness probe failed: HTTP probe failed with statuscode: 503",
+              "count": 22,
+              "last_seen": "2026-11-14T14:38:44+00:00"
+            },
+            {
+              "type": "Warning",
+              "reason": "Unhealthy",
+              "object": "Pod/prediction-api-7bc46dc47c-pm7g4",
+              "message": "Readiness probe failed: Get \"http://10.244.0.8:8000/readyz\": dial tcp 10.244.0.8:8000: connect: connection refused",
+              "count": 2,
+              "last_seen": "2026-11-14T14:36:58+00:00"
+            },
+            {
+              "type": "Warning",
+              "reason": "Unhealthy",
+              "object": "Pod/prediction-api-7bc46dc47c-bv575",
+              "message": "Readiness probe failed: Get \"http://10.244.0.7:8000/readyz\": dial tcp 10.244.0.7:8000: connect: connection refused",
+              "count": 3,
+              "last_seen": "2026-11-14T14:36:57+00:00"
+            },
+            {
+              "type": "Warning",
+              "reason": "Unhealthy",
+              "object": "Pod/prediction-api-7bc46dc47c-c4t2j",
+              "message": "Readiness probe failed: Get \"http://10.244.0.6:8000/readyz\": dial tcp 10.244.0.6:8000: connect: connection refused",
+              "count": 5,
+              "last_seen": "2026-11-14T14:36:49+00:00"
+            },
+            {
+              "type": "Warning",
+              "reason": "Unhealthy",
+              "object": "Pod/prediction-api-7bc46dc47c-snvn7",
+              "message": "Readiness probe failed: Get \"http://10.244.0.5:8000/readyz\": dial tcp 10.244.0.5:8000: connect: connection refused",
+              "count": 5,
+              "last_seen": "2026-11-14T14:36:49+00:00"
+            }
+          ]
+        },
+        "error": null,
+        "timestamp": "2026-11-14T14:40:30.758413Z"
+      }
+    ]
+  }
+}

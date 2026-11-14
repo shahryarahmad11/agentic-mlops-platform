@@ -1,0 +1,6 @@
+$ # INJECTED FAILURE: edit the DVC-tracked dataset outside DVC (5 rows with missing values)
+$ printf ",,,,,1\n%.0s" 1 2 3 4 5 >> data/train.csv
+$ wc -l data/train.csv
+1006 data/train.csv
+triggered manual__2026-11-14T14:44:42.419561+00:00
+failed [('validate_dataset', 'failed'), ('preprocess_data', 'upstream_failed'), ('train_model', 'upstream_failed'), ('evaluate_and_log_mlflow', 'upstream_failed'), ('quality_gate', 'upstream_failed')]

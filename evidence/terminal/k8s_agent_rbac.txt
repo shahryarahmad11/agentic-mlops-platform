@@ -1,0 +1,7 @@
+$ export KUBECONFIG=~/.kube/mlops-agent.kubeconfig   # restricted ServiceAccount
+$ kubectl auth can-i get pods -n mlops                  -> yes
+$ kubectl auth can-i patch deployments -n mlops         -> yes
+$ kubectl auth can-i delete deployments -n mlops        -> no
+$ kubectl auth can-i get secrets -n mlops               -> no
+$ kubectl auth can-i get pods -n kube-system            -> no
+$ kubectl auth can-i patch deployments -n kube-system   -> no

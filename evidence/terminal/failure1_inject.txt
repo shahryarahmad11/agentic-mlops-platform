@@ -1,0 +1,13 @@
+$ scripts/inject_failure.sh bad-model-path
+configmap/prediction-api-config patched
+pod "prediction-api-7bc46dc47c-c4t2j" deleted from mlops namespace
+pod "prediction-api-7bc46dc47c-snvn7" deleted from mlops namespace
+Injected: wrong MODEL_PATH. All Pods are recreated and fail readiness (API down).
+
+$ kubectl -n mlops get pods,endpointslices
+NAME                                  READY   STATUS    RESTARTS   AGE
+pod/prediction-api-7bc46dc47c-bv575   0/1     Running   0          40s
+pod/prediction-api-7bc46dc47c-pm7g4   0/1     Running   0          40s
+
+NAME                                                  ADDRESSTYPE   PORTS   ENDPOINTS               AGE
+endpointslice.discovery.k8s.io/prediction-api-lmgfj   IPv4          8000    10.244.0.8,10.244.0.7   8m29s

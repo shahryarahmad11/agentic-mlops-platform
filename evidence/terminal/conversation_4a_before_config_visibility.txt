@@ -1,0 +1,23 @@
+
+################ Conversation 4: deployment_diagnosis
+you> Why is my prediction API unavailable?
+
+=== Answer  [req-95cefdebc467]
+The prediction API is unavailable because the pods are failing their readiness probes (returning HTTP 503). The container logs indicate that the application fails to start up properly because it cannot locate the model file at `/app/model/model_v2.joblib` (File or directory not found).
+
+--- Facts (tool-backed)
+  * Service 'prediction-api' has 0 ready endpoints and live /readyz returns HTTP 503.  [k8s_diagnose_service]
+  * Deployment 'prediction-api' has 0/2 ready replicas.  [k8s_diagnose_service]
+  * Pods log a model load failure: `model_load_failed` for `/app/model/model_v2.joblib` with error `[Errno 2] No such file or directory`.  [k8s_diagnose_service]
+  * Readiness probes are failing repeatedly with HTTP status code 503.  [k8s_diagnose_service]
+
+--- Uncertainties
+  ? Whether the image build omitted the model file or if it's expected to be mounted via a volume that is missing or misconfigured.
+
+--- Recommended actions
+  > Inspect the container image build process or volume mounts for the prediction-api deployment to ensure `model_v2.joblib` is present at `/app/model/model_v2.joblib`.
+
+--- Tool trace (1 calls)
+  ok k8s_diagnose_service         success                     538 ms  
+
+(saved to evidence/conversation_4_deployment_diagnosis.json)

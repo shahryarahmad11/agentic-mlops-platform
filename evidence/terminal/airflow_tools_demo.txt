@@ -1,0 +1,263 @@
+
+### 1. DAGs
+airflow_list_dags -> success (121.01 ms)
+{
+  "count": 1,
+  "dags": [
+    {
+      "dag_id": "training_pipeline",
+      "is_paused": false,
+      "description": "Validate, preprocess, train, evaluate/log to MLflow, then apply a quality gate",
+      "tags": [
+        "mlops",
+        "training"
+      ],
+      "approved_for_trigger": true,
+      "last_parsed": "2026-11-14T13:59:06.903353Z"
+    }
+  ]
+}
+
+### 2. Recent runs
+airflow_get_dag_runs -> success (73.66 ms)
+{
+  "dag_id": "training_pipeline",
+  "count": 3,
+  "runs": [
+    {
+      "dag_run_id": "manual__2026-11-14T12:45:28.780590+00:00",
+      "state": "success",
+      "run_type": "manual",
+      "start_date": "2026-11-14T12:47:31.553687Z",
+      "end_date": "2026-11-14T13:48:49.845671Z",
+      "conf": {}
+    },
+    {
+      "dag_run_id": "manual__2026-11-14T12:28:50.359165+00:00",
+      "state": "failed",
+      "run_type": "manual",
+      "start_date": "2026-11-14T12:34:44.360620Z",
+      "end_date": "2026-11-14T12:47:30.557282Z",
+      "conf": {
+        "min_f1": 0.999
+      }
+    },
+    {
+      "dag_run_id": "manual__2026-11-14T12:22:36.096290+00:00",
+      "state": "failed",
+      "run_type": "manual",
+      "start_date": "2026-11-14T12:22:38.286354Z",
+      "end_date": "2026-11-14T12:34:43.186860Z",
+      "conf": {}
+    }
+  ]
+}
+
+### 3. Trigger WITHOUT confirmation
+airflow_trigger_dag -> confirmation_required (0.1 ms)
+{
+  "type": "ConfirmationRequired",
+  "message": "Tool 'airflow_trigger_dag' changes state and needs explicit user confirmation",
+  "retryable": false
+}
+
+### 4. Trigger WITH confirmation
+airflow_trigger_dag -> success (537.75 ms)
+{
+  "dag_run_id": "manual__2026-11-14T13:59:14.874924+00:00",
+  "state": "queued",
+  "run_type": "manual",
+  "start_date": null,
+  "end_date": null,
+  "conf": {},
+  "dag_id": "training_pipeline",
+  "triggered_conf": {},
+  "next_step": "Call airflow_wait_for_run with this dag_run_id to get the outcome."
+}
+
+### 5. Wait for the run
+airflow_get_run_details -> success (165.51 ms)
+{
+  "dag_run_id": "manual__2026-11-14T13:59:14.874924+00:00",
+  "state": "success",
+  "run_type": "manual",
+  "start_date": "2026-11-14T13:59:16.220695Z",
+  "end_date": "2026-11-14T14:00:36.130151Z",
+  "conf": {},
+  "dag_id": "training_pipeline",
+  "is_terminal": true,
+  "task_state_counts": {
+    "success": 5
+  },
+  "tasks": [
+    {
+      "task_id": "validate_dataset",
+      "state": "success",
+      "try_number": 1,
+      "max_tries": 0,
+      "start_date": "2026-11-14T13:59:19.068388Z",
+      "end_date": "2026-11-14T13:59:39.811003Z",
+      "duration_seconds": 40.74
+    },
+    {
+      "task_id": "preprocess_data",
+      "state": "success",
+      "try_number": 1,
+      "max_tries": 2,
+      "start_date": "2026-11-14T13:59:41.013831Z",
+      "end_date": "2026-11-14T13:59:48.832380Z",
+      "duration_seconds": 14.82
+    },
+    {
+      "task_id": "train_model",
+      "state": "success",
+      "try_number": 1,
+      "max_tries": 2,
+      "start_date": "2026-11-14T13:59:50.033927Z",
+      "end_date": "2026-11-14T13:59:56.420569Z",
+      "duration_seconds": 12.39
+    },
+    {
+      "task_id": "evaluate_and_log_mlflow",
+      "state": "success",
+      "try_number": 1,
+      "max_tries": 2,
+      "start_date": "2026-11-14T13:59:57.509887Z",
+      "end_date": "2026-11-14T14:00:29.119835Z",
+      "duration_seconds": 3.61
+    },
+    {
+      "task_id": "quality_gate",
+      "state": "success",
+      "try_number": 1,
+      "max_tries": 0,
+      "start_date": "2026-11-14T14:00:29.832277Z",
+      "end_date": "2026-11-14T14:00:35.989443Z",
+      "duration_seconds": 12.16
+    }
+  ]
+}
+
+### 6. Run details
+airflow_get_run_details -> success (136.78 ms)
+{
+  "dag_run_id": "manual__2026-11-14T13:59:14.874924+00:00",
+  "state": "success",
+  "run_type": "manual",
+  "start_date": "2026-11-14T13:59:16.220695Z",
+  "end_date": "2026-11-14T14:00:36.130151Z",
+  "conf": {},
+  "dag_id": "training_pipeline",
+  "is_terminal": true,
+  "task_state_counts": {
+    "success": 5
+  },
+  "tasks": [
+    {
+      "task_id": "validate_dataset",
+      "state": "success",
+      "try_number": 1,
+      "max_tries": 0,
+      "start_date": "2026-11-14T13:59:19.068388Z",
+      "end_date": "2026-11-14T13:59:39.811003Z",
+      "duration_seconds": 40.74
+    },
+    {
+      "task_id": "preprocess_data",
+      "state": "success",
+      "try_number": 1,
+      "max_tries": 2,
+      "start_date": "2026-11-14T13:59:41.013831Z",
+      "end_date": "2026-11-14T13:59:48.832380Z",
+      "duration_seconds": 14.82
+    },
+    {
+      "task_id": "train_model",
+      "state": "success",
+      "try_number": 1,
+      "max_tries": 2,
+      "start_date": "2026-11-14T13:59:50.033927Z",
+      "end_date": "2026-11-14T13:59:56.420569Z",
+      "duration_seconds": 12.39
+    },
+    {
+      "task_id": "evaluate_and_log_mlflow",
+      "state": "success",
+      "try_number": 1,
+      "max_tries": 2,
+      "start_date": "2026-11-14T13:59:57.509887Z",
+      "end_date": "2026-11-14T14:00:29.119835Z",
+      "duration_seconds": 3.61
+    },
+    {
+      "task_id": "quality_gate",
+      "state": "success",
+      "try_number": 1,
+      "max_tries": 0,
+      "start_date": "2026-11-14T14:00:29.832277Z",
+      "end_date": "2026-11-14T14:00:35.989443Z",
+      "duration_seconds": 12.16
+    }
+  ]
+}
+
+### 7. Failed tasks
+airflow_failed_tasks -> success (257.16 ms)
+{
+  "dag_id": "training_pipeline",
+  "dag_run_id": "manual__2026-11-14T13:59:14.874924+00:00",
+  "run_state": "success",
+  "failed_count": 0,
+  "failed_tasks": [],
+  "first_failed_task": null,
+  "note": "upstream_failed tasks never ran because a task before them failed"
+}
+
+### 8. Gate task log
+airflow_task_logs -> success (166.43 ms)
+{
+  "dag_id": "training_pipeline",
+  "dag_run_id": "manual__2026-11-14T13:59:14.874924+00:00",
+  "task_id": "quality_gate",
+  "try_number": 1,
+  "log_tail": [
+    "[info] Running command: ['/usr/bin/bash', '-c', \"cd '/home/shery/agentic-mlops-platform' && '/home/shery/agentic-mlops-platform/.venv/bin/python' training/pipeline_steps.py gate --min-f1 0.9\"]",
+    "[info] Output:",
+    "[info] 2026/11/14 19:00:32 INFO mlflow.agent.hint: Load the `mlflow-trace-instrumentation` skill at /home/shery/agentic-mlops-platform/.venv/lib/python3.12/site-packages/mlflow/assistant/skills/mlflow-trace-instrumentation/SKILL.md before writing any tracing code; it ships with this MLflow install. ",
+    "[info] {\"stage\": \"gate\", \"status\": \"passed\", \"run_id\": \"c514b5715cee4b22ad50e0a0bf836c22\", \"f1_macro\": 0.9699879951980792, \"min_f1\": 0.9, \"note\": \"Meets the quality gate; promotion would still need review\"}",
+    "[info] Command exited with return code 0",
+    "[info] Pushing xcom"
+  ]
+}
+
+### 9. INVALID: DAG not approved
+airflow_trigger_dag -> forbidden (1.91 ms)
+{
+  "type": "Forbidden",
+  "message": "DAG 'example_bash_operator' is not approved for triggering by the agent",
+  "retryable": false
+}
+
+### 10. INVALID: threshold out of range
+airflow_trigger_dag -> invalid_request (1.27 ms)
+{
+  "type": "InvalidInput",
+  "message": "min_f1 must be between 0 and 1",
+  "retryable": false
+}
+
+### 11. INVALID: path traversal in run id
+airflow_get_run_details -> invalid_request (0.85 ms)
+{
+  "type": "InvalidInput",
+  "message": "Invalid dag_run_id: '../../x'",
+  "retryable": false
+}
+
+### 12. INVALID: unknown DAG
+airflow_get_dag_runs -> invalid_request (44.01 ms)
+{
+  "type": "InvalidInput",
+  "message": "Not found in Airflow: /dags/no_such_dag/dagRuns",
+  "retryable": false
+}

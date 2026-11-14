@@ -13,7 +13,7 @@ See [architecture.md](architecture.md) for the component diagram, request flow, 
 | DVC (`agent/tools/dvc_tools.py`) | 7 read-only | Datasets, current version + commit, history, compare versions, change detection, reproduction steps, hash to version lookup |
 | MLflow (`agent/tools/mlflow_tools.py`) | 7 read-only | Experiments, runs, metrics/params/artifacts, best run (with caveats), run and experiment comparison, registry |
 | Airflow (`agent/tools/airflow_tools.py`) | 6 read-only + 1 approval-gated | DAGs, run status, task states, wait for a run, failed tasks + log diagnostics; trigger only the approved DAG |
-| Kubernetes (`agent/tools/kubernetes_tools.py`) | 8 read-only + 2 approval-gated | Deployments, Pods, logs, Services/endpoints, events, unhealthy Pods/restarts, deployed version, full diagnosis; restart/scale only in approved namespaces |
+| Kubernetes (`agent/tools/kubernetes_tools.py`) | 9 read-only + 2 approval-gated | Deployments, Pods, logs, Services/endpoints, events, unhealthy Pods/restarts, deployed version, wait for rollout, full diagnosis (incl. ConfigMaps and error log lines); restart/scale only in approved namespaces |
 | Orchestrator (`agent/orchestrator.py`) | - | Gemini function calling, multi-tool reasoning, facts/uncertainties/actions, pending-action approvals, budgets |
 
 ## Repository Structure
@@ -29,7 +29,7 @@ agentic-mlops-platform/
 ├── kubernetes/       # Namespace, ConfigMap, Deployment, Service, agent RBAC
 ├── scripts/          # start services, deploy, inject failures, run demo conversations
 ├── tests/            # pytest suite (all external systems mocked)
-├── evidence/         # saved agent conversations with raw tool evidence
+├── evidence/         # saved agent conversations (answer + raw tool output) and captured terminal output
 ├── screenshots/      # evidence for the technical report
 ├── .github/workflows/ci.yml
 ├── Dockerfile        # inference service image
@@ -58,7 +58,16 @@ uv pip install "apache-airflow==3.1.8" apache-airflow-providers-standard \
   --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-3.1.8/constraints-3.12.txt"
 ```
 
-Kubernetes runs locally with Docker + [kind](https://kind.sigs.k8s.io/) + kubectl.
+Kubernetes runs locally with Docker + [kind](https://kind.sigs.k8s.io/) + kubectl:
+
+```bash
+curl -fsSL https://get.docker.com | sh && sudo usermod -aG docker $USER   # then open a new shell
+curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && sudo install kubectl /usr/local/bin/
+curl -Lo kind https://kind.sigs.k8s.io/dl/v0.29.0/kind-linux-amd64 && sudo install kind /usr/local/bin/
+kind create cluster --name mlops
+```
+
+On a small WSL machine (about 4 GB RAM) running MLflow, Airflow and kind together needs extra swap (a 6 GB swapfile was used).
 
 ## 2. Environment configuration
 
@@ -78,14 +87,15 @@ Deploy the prediction API (model exported from MLflow, with its provenance):
 ```bash
 python training/export_model.py          # best run of the Airflow pipeline that passed the gate
 scripts/k8s_deploy.sh 1.0.0              # docker build, kind load, kubectl apply, rollout status
-scripts/agent_kubeconfig.sh              # optional: restricted ServiceAccount kubeconfig for the agent
+scripts/agent_kubeconfig.sh              # restricted ServiceAccount kubeconfig for the agent
+echo "KUBECONFIG=$HOME/.kube/mlops-agent.kubeconfig" >> .env
 ```
 
 ## 4. Running the tests
 
 ```bash
 uv run ruff check .
-uv run pytest -q                          # 49 tests; no services or API key needed
+uv run pytest -q                          # 50 tests; no services or API key needed
 ```
 
 CI (`.github/workflows/ci.yml`) runs lint + tests on every push and pull request, then builds and smoke-tests the inference image.
@@ -122,6 +132,21 @@ scripts/inject_failure.sh bad-model-path         # Pods never Ready, Service has
 scripts/inject_failure.sh bad-image              # ImagePullBackOff, rollout stalls
 scripts/inject_failure.sh restore
 ```
+
+## Results (what was actually run)
+
+| Scenario | Outcome | Evidence |
+|---|---|---|
+| Dataset provenance | Best run `rf-v2-n200-d10` traced to `data-v2` / commit `c57fc80`, with reproduction steps | `evidence/conversation_1_*.json`, `screenshots/15_*` |
+| Model selection | Last 5 runs compared; `rf-v2-n200-d10` (F1 0.985) recommended with caveats (not production-ready, different test splits) | `conversation_2_*`, `screenshots/16_*` |
+| Pipeline execution | Trigger proposed, approved by the user, run waited on: all 5 tasks succeeded, gate passed | `conversation_3_*`, `screenshots/04-06, 17_*` |
+| Deployment diagnosis | Injected bad `MODEL_PATH`: agent found 0 ready endpoints, the model-load error and the ConfigMap value | `conversation_4_*`, `screenshots/18_*, 20a-b_*` |
+| Multi-tool reasoning | MLflow + DVC + Kubernetes + Airflow correlated; retraining not indicated, nothing triggered | `conversation_5_*`, `screenshots/19_*` |
+| Failure 2 | Dataset edited outside DVC: `validate_dataset` failed, agent combined Airflow logs + DVC status, fixed with `dvc checkout`, re-run passed | `failure2_*`, `screenshots/20c_*` |
+| Quality gate | `min_f1=0.999` run failed at `quality_gate`, MLflow run tagged `quality_gate=failed` | `screenshots/07-09` |
+| LLM unavailable | Gemini quota exhausted (HTTP 429): agent returned no facts, reported the reason | `llm_quota_exhausted_*`, `screenshots/20d_*` |
+
+Conversations 1-3 used `gemini-3.5-flash`; after its free-tier daily limit (20 requests/day/model) was reached, the rest used `gemini-3.5-flash-lite` (set `LLM_MODEL` in `.env`).
 
 ## Security
 
@@ -185,3 +210,12 @@ No API keys, kubeconfigs or tokens are committed. Secrets are supplied via envir
 
 ### Push 10: Tests and CI
 - 49 pytest tests with mocked DVC/MLflow/Airflow/Kubernetes/LLM; GitHub Actions runs ruff, pytest and an inference-image smoke test
+
+### Push 11: End-to-end execution, failure investigations and evidence
+- Installed Docker, kubectl and kind; deployed the prediction API (model `a4ade6fe`, gated pipeline run on `data-v2`) and connected the agent through the restricted `mlops-agent` ServiceAccount
+- Diagnosed and fixed an unexpected pipeline slowdown (MLflow retry defaults + WSL mirrored networking + requirement inference): DAG runs went from 15+ minutes to under 90 seconds
+- Ran the five demo conversations and two injected failures; saved answers and raw tool output in `evidence/` and screenshots in `screenshots/`
+- Improvements found during the investigations: the diagnosis tool now returns ConfigMaps and error log lines first, the service no longer logs probe requests (image 1.0.1), and new wait tools (`airflow_wait_for_run`, `k8s_wait_for_rollout`) let the agent check outcomes only after they are final
+- Docker build made robust to slow networks (pip timeouts, retries, cache mount); `dvc repro` stage recorded in `dvc.lock`; 50 tests
+- Filled the remaining sections of the technical report
+

@@ -1,0 +1,277 @@
+{
+  "question": "Which dataset version was used to train the best run of the mlops-agent-training experiment, and how do I reproduce exactly that dataset?",
+  "response": {
+    "request_id": "req-abff01aac638",
+    "answer": "The best run of the `mlops-agent-training` experiment is **`f9b9ff8aef3f4fddaad39738771c5b67`** (`rf-v2-n200-d10`, f1_macro: 0.985), which was trained on dataset version **`data-v2`**.\n\n### Dataset Details\n- **Version Tag:** `data-v2`\n- **DVC MD5 Hash:** `3acbb1e7aee10825dc89fbc3216816ad`\n- **Git Commit:** `c57fc80a081163cfd6e8a72db9806ed161794b35`\n- **Size / Rows:** 99,666 bytes / 1,000 rows\n- **Pointer File:** `data/train.csv.dvc`\n\n### Steps to Reproduce Exactly That Dataset\n1. Restore the dataset pointer file for `data-v2`:\n   ```bash\n   git restore --source=data-v2 data/train.csv.dvc\n   ```\n2. Checkout the binary data from local cache or remote:\n   ```bash\n   dvc checkout data/train.csv\n   # or if not cached locally:\n   dvc pull data/train.csv.dvc\n   ```\n3. Verify the hash matches:\n   ```bash\n   grep md5 data/train.csv.dvc\n   # Expected output: md5: 3acbb1e7aee10825dc89fbc3216816ad\n   ```",
+    "facts": [
+      {
+        "statement": "The best run in 'mlops-agent-training' by f1_macro (0.985) is run_id 'f9b9ff8aef3f4fddaad39738771c5b67' (run_name 'rf-v2-n200-d10').",
+        "sources": [
+          "mlflow_best_run"
+        ]
+      },
+      {
+        "statement": "The dataset version recorded in the best run's provenance is 'data-v2' with DVC hash '3acbb1e7aee10825dc89fbc3216816ad' and Git commit 'c57fc80a081163cfd6e8a72db9806ed161794b35'.",
+        "sources": [
+          "mlflow_best_run",
+          "dvc_find_version_by_hash"
+        ]
+      },
+      {
+        "statement": "To reproduce 'data-v2', run 'git restore --source=data-v2 data/train.csv.dvc' followed by 'dvc checkout data/train.csv' (or 'dvc pull data/train.csv.dvc').",
+        "sources": [
+          "dvc_reproduce_instructions"
+        ]
+      },
+      {
+        "statement": "The dataset version 'data-v2' is currently the active version recorded in the workspace.",
+        "sources": [
+          "dvc_current_version"
+        ]
+      }
+    ],
+    "uncertainties": [],
+    "recommended_actions": [
+      "Execute 'git restore --source=data-v2 data/train.csv.dvc' and 'dvc checkout data/train.csv' if you need to guarantee workspace dataset alignment in another environment.",
+      "Note that dataset evaluation metrics across different dataset versions (data-v1 vs data-v2) are scored on different test splits and are not directly comparable."
+    ],
+    "pending_actions": [],
+    "tool_calls": [
+      {
+        "tool": "mlflow_best_run",
+        "source": "mlflow",
+        "status": "success",
+        "duration_ms": 635.15,
+        "request_id": "req-abff01aac638",
+        "arguments": {
+          "experiment_name": "mlops-agent-training"
+        },
+        "error": null
+      },
+      {
+        "tool": "dvc_find_version_by_hash",
+        "source": "dvc",
+        "status": "success",
+        "duration_ms": 949.37,
+        "request_id": "req-abff01aac638",
+        "arguments": {
+          "md5": "3acbb1e7aee10825dc89fbc3216816ad"
+        },
+        "error": null
+      },
+      {
+        "tool": "dvc_reproduce_instructions",
+        "source": "dvc",
+        "status": "success",
+        "duration_ms": 117.31,
+        "request_id": "req-abff01aac638",
+        "arguments": {
+          "version": "data-v2"
+        },
+        "error": null
+      },
+      {
+        "tool": "dvc_current_version",
+        "source": "dvc",
+        "status": "success",
+        "duration_ms": 115.13,
+        "request_id": "req-abff01aac638",
+        "arguments": {},
+        "error": null
+      },
+      {
+        "tool": "dvc_list_versions",
+        "source": "dvc",
+        "status": "success",
+        "duration_ms": 88.56,
+        "request_id": "req-abff01aac638",
+        "arguments": {},
+        "error": null
+      }
+    ],
+    "evidence": [
+      {
+        "tool": "mlflow_best_run",
+        "source": "mlflow",
+        "status": "success",
+        "request_id": "req-abff01aac638",
+        "duration_ms": 635.15,
+        "data": {
+          "experiment": "mlops-agent-training",
+          "metric": "f1_macro",
+          "mode": "max",
+          "dataset_filter": null,
+          "found": true,
+          "runs_considered": 6,
+          "best": {
+            "run_id": "f9b9ff8aef3f4fddaad39738771c5b67",
+            "run_name": "rf-v2-n200-d10",
+            "status": "FINISHED",
+            "started_at": "2026-11-13T22:35:39.869000+00:00",
+            "params": {
+              "n_estimators": "200",
+              "max_depth": "10",
+              "seed": "42",
+              "test_size": "0.2",
+              "n_rows": "1000"
+            },
+            "metrics": {
+              "accuracy": 0.985,
+              "f1_macro": 0.985
+            },
+            "provenance": {
+              "dataset_version": "data-v2",
+              "dvc_md5": "3acbb1e7aee10825dc89fbc3216816ad",
+              "dataset_git_commit": "c57fc80a081163cfd6e8a72db9806ed161794b35",
+              "git_commit": "2e85531c4369c8573afc49ff4995393859b97c8b",
+              "git_dirty": "false",
+              "data_matches_pointer": "true",
+              "quality_gate": null,
+              "airflow_run_id": null
+            }
+          },
+          "top_runs": [
+            {
+              "run_id": "f9b9ff8aef3f4fddaad39738771c5b67",
+              "run_name": "rf-v2-n200-d10",
+              "value": 0.985,
+              "dataset_version": "data-v2"
+            },
+            {
+              "run_id": "84f4c66f30fb43258b94bbf7fc4a8a82",
+              "run_name": "rf-v2-n100-d5",
+              "value": 0.969988,
+              "dataset_version": "data-v2"
+            },
+            {
+              "run_id": "999a5b38bd8d4b8daaaf12897ed4365e",
+              "run_name": "rf-v2-n50-d3",
+              "value": 0.954972,
+              "dataset_version": "data-v2"
+            }
+          ],
+          "caveats": [
+            "Runs use different dataset versions (data-v1, data-v2); each run is scored on its own held-out split, so the scores are not strictly comparable.",
+            "A ranking by one metric is evidence, not approval: latency, robustness, drift, fairness and review gates are not covered by this data, so this does not make a model production-ready."
+          ],
+          "decision": "Ranking only; this is not a promotion decision."
+        },
+        "error": null,
+        "timestamp": "2026-11-14T14:12:38.388109Z"
+      },
+      {
+        "tool": "dvc_find_version_by_hash",
+        "source": "dvc",
+        "status": "success",
+        "request_id": "req-abff01aac638",
+        "duration_ms": 949.37,
+        "data": {
+          "md5": "3acbb1e7aee10825dc89fbc3216816ad",
+          "found": true,
+          "matches": [
+            {
+              "pointer_file": "data/train.csv.dvc",
+              "commit": "c57fc80a081163cfd6e8a72db9806ed161794b35",
+              "committed_at": "2026-11-14T02:59:35+05:00",
+              "subject": "data: update dataset to v2 (1000 rows)",
+              "md5": "3acbb1e7aee10825dc89fbc3216816ad",
+              "size_bytes": 99666,
+              "rows": 1000,
+              "dataset_version": "data-v2"
+            }
+          ],
+          "searched": [
+            "data/train.csv.dvc"
+          ]
+        },
+        "error": null,
+        "timestamp": "2026-11-14T14:13:00.879583Z"
+      },
+      {
+        "tool": "dvc_reproduce_instructions",
+        "source": "dvc",
+        "status": "success",
+        "request_id": "req-abff01aac638",
+        "duration_ms": 117.31,
+        "data": {
+          "ref": "data-v2",
+          "ref_commit": "c57fc80a081163cfd6e8a72db9806ed161794b35",
+          "expected_md5": "3acbb1e7aee10825dc89fbc3216816ad",
+          "expected_rows": 1000,
+          "cached_locally": true,
+          "executed": false,
+          "steps": [
+            "git restore --source=data-v2 data/train.csv.dvc   # restore only the dataset pointer",
+            "dvc checkout data/train.csv   # from the local cache, or: dvc pull data/train.csv.dvc",
+            "grep md5 data/train.csv.dvc   # should show 3acbb1e7aee10825dc89fbc3216816ad",
+            "git restore data/train.csv.dvc && dvc checkout data/train.csv   # return to the current version"
+          ],
+          "notes": [
+            "dvc pull needs the object in the DVC remote; verify with: dvc status -c",
+            "Alternative: git switch --detach data-v2 && dvc pull (also restores the old code)."
+          ]
+        },
+        "error": null,
+        "timestamp": "2026-11-14T14:13:00.997057Z"
+      },
+      {
+        "tool": "dvc_current_version",
+        "source": "dvc",
+        "status": "success",
+        "request_id": "req-abff01aac638",
+        "duration_ms": 115.13,
+        "data": {
+          "pointer_file": "data/train.csv.dvc",
+          "data_path": "data/train.csv",
+          "md5": "3acbb1e7aee10825dc89fbc3216816ad",
+          "size_bytes": 99666,
+          "nfiles": null,
+          "rows": 1000,
+          "dataset_version": "data-v2",
+          "dataset_git_commit": "c57fc80a081163cfd6e8a72db9806ed161794b35",
+          "git_head": "87efc717a733ee2b6d2fb0feb2b2caa3514f9392",
+          "git_branch": "main",
+          "workspace_data_present": true,
+          "workspace_data_matches_pointer": true
+        },
+        "error": null,
+        "timestamp": "2026-11-14T14:13:37.099724Z"
+      },
+      {
+        "tool": "dvc_list_versions",
+        "source": "dvc",
+        "status": "success",
+        "request_id": "req-abff01aac638",
+        "duration_ms": 88.56,
+        "data": {
+          "pointer_file": "data/train.csv.dvc",
+          "count": 2,
+          "versions": [
+            {
+              "commit": "c57fc80a081163cfd6e8a72db9806ed161794b35",
+              "committed_at": "2026-11-14T02:59:35+05:00",
+              "subject": "data: update dataset to v2 (1000 rows)",
+              "md5": "3acbb1e7aee10825dc89fbc3216816ad",
+              "size_bytes": 99666,
+              "rows": 1000,
+              "dataset_version": "data-v2",
+              "is_current": true
+            },
+            {
+              "commit": "25738789f94fa92c3f78b3c6561fffbc821fe845",
+              "committed_at": "2026-11-14T02:55:31+05:00",
+              "subject": "data: track dataset v1 (500 rows)",
+              "md5": "b6c12d460108c0090cbc2a1f944c699e",
+              "size_bytes": 49944,
+              "rows": 500,
+              "dataset_version": "data-v1",
+              "is_current": false
+            }
+          ]
+        },
+        "error": null,
+        "timestamp": "2026-11-14T14:13:37.188449Z"
+      }
+    ]
+  }
+}

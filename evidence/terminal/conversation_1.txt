@@ -1,0 +1,49 @@
+
+################ Conversation 1: dataset_provenance
+you> Which dataset version was used to train the best run of the mlops-agent-training experiment, and how do I reproduce exactly that dataset?
+
+=== Answer  [req-abff01aac638]
+The best run of the `mlops-agent-training` experiment is **`f9b9ff8aef3f4fddaad39738771c5b67`** (`rf-v2-n200-d10`, f1_macro: 0.985), which was trained on dataset version **`data-v2`**.
+
+### Dataset Details
+- **Version Tag:** `data-v2`
+- **DVC MD5 Hash:** `3acbb1e7aee10825dc89fbc3216816ad`
+- **Git Commit:** `c57fc80a081163cfd6e8a72db9806ed161794b35`
+- **Size / Rows:** 99,666 bytes / 1,000 rows
+- **Pointer File:** `data/train.csv.dvc`
+
+### Steps to Reproduce Exactly That Dataset
+1. Restore the dataset pointer file for `data-v2`:
+   ```bash
+   git restore --source=data-v2 data/train.csv.dvc
+   ```
+2. Checkout the binary data from local cache or remote:
+   ```bash
+   dvc checkout data/train.csv
+   # or if not cached locally:
+   dvc pull data/train.csv.dvc
+   ```
+3. Verify the hash matches:
+   ```bash
+   grep md5 data/train.csv.dvc
+   # Expected output: md5: 3acbb1e7aee10825dc89fbc3216816ad
+   ```
+
+--- Facts (tool-backed)
+  * The best run in 'mlops-agent-training' by f1_macro (0.985) is run_id 'f9b9ff8aef3f4fddaad39738771c5b67' (run_name 'rf-v2-n200-d10').  [mlflow_best_run]
+  * The dataset version recorded in the best run's provenance is 'data-v2' with DVC hash '3acbb1e7aee10825dc89fbc3216816ad' and Git commit 'c57fc80a081163cfd6e8a72db9806ed161794b35'.  [mlflow_best_run, dvc_find_version_by_hash]
+  * To reproduce 'data-v2', run 'git restore --source=data-v2 data/train.csv.dvc' followed by 'dvc checkout data/train.csv' (or 'dvc pull data/train.csv.dvc').  [dvc_reproduce_instructions]
+  * The dataset version 'data-v2' is currently the active version recorded in the workspace.  [dvc_current_version]
+
+--- Recommended actions
+  > Execute 'git restore --source=data-v2 data/train.csv.dvc' and 'dvc checkout data/train.csv' if you need to guarantee workspace dataset alignment in another environment.
+  > Note that dataset evaluation metrics across different dataset versions (data-v1 vs data-v2) are scored on different test splits and are not directly comparable.
+
+--- Tool trace (5 calls)
+  ok mlflow_best_run              success                     635 ms  {"experiment_name": "mlops-agent-training"}
+  ok dvc_find_version_by_hash     success                     949 ms  {"md5": "3acbb1e7aee10825dc89fbc3216816ad"}
+  ok dvc_reproduce_instructions   success                     117 ms  {"version": "data-v2"}
+  ok dvc_current_version          success                     115 ms  
+  ok dvc_list_versions            success                      89 ms  
+
+(saved to evidence/conversation_1_dataset_provenance.json)

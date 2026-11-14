@@ -1,0 +1,2 @@
+$ kubectl apply -f kubernetes/configmap.yaml    # root-cause fix: restore MODEL_PATH
+configmap/prediction-api-config configured

@@ -1,0 +1,7 @@
+$ # verification: re-run training_pipeline manual__2026-11-14T14:45:44.465122+00:00
+state: success | waited 46.6 s
+  validate_dataset           success
+  preprocess_data            success
+  train_model                success
+  evaluate_and_log_mlflow    success
+  quality_gate               success

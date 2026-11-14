@@ -1,0 +1,185 @@
+
+### 1. Trigger with an impossible quality threshold
+airflow_trigger_dag -> success (241.23 ms)
+{
+  "dag_run_id": "manual__2026-11-14T14:01:34.922665+00:00",
+  "state": "queued",
+  "run_type": "manual",
+  "start_date": null,
+  "end_date": null,
+  "conf": {
+    "min_f1": 0.999
+  },
+  "dag_id": "training_pipeline",
+  "triggered_conf": {
+    "min_f1": 0.999
+  },
+  "next_step": "Call airflow_wait_for_run with this dag_run_id to get the outcome."
+}
+
+### 2. Wait for the run
+airflow_get_run_details -> success (154.73 ms)
+{
+  "dag_run_id": "manual__2026-11-14T14:01:34.922665+00:00",
+  "state": "failed",
+  "run_type": "manual",
+  "start_date": "2026-11-14T14:01:35.449982Z",
+  "end_date": "2026-11-14T14:02:18.901036Z",
+  "conf": {
+    "min_f1": 0.999
+  },
+  "dag_id": "training_pipeline",
+  "is_terminal": true,
+  "task_state_counts": {
+    "success": 4,
+    "failed": 1
+  },
+  "tasks": [
+    {
+      "task_id": "validate_dataset",
+      "state": "success",
+      "try_number": 1,
+      "max_tries": 0,
+      "start_date": "2026-11-14T14:01:36.139311Z",
+      "end_date": "2026-11-14T14:01:43.510035Z",
+      "duration_seconds": 14.37
+    },
+    {
+      "task_id": "preprocess_data",
+      "state": "success",
+      "try_number": 1,
+      "max_tries": 2,
+      "start_date": "2026-11-14T14:01:45.094236Z",
+      "end_date": "2026-11-14T14:01:51.061240Z",
+      "duration_seconds": 11.97
+    },
+    {
+      "task_id": "train_model",
+      "state": "success",
+      "try_number": 1,
+      "max_tries": 2,
+      "start_date": "2026-11-14T14:01:52.425937Z",
+      "end_date": "2026-11-14T14:01:59.200173Z",
+      "duration_seconds": 13.77
+    },
+    {
+      "task_id": "evaluate_and_log_mlflow",
+      "state": "success",
+      "try_number": 1,
+      "max_tries": 2,
+      "start_date": "2026-11-14T14:02:00.598214Z",
+      "end_date": "2026-11-14T14:02:11.149585Z",
+      "duration_seconds": 21.55
+    },
+    {
+      "task_id": "quality_gate",
+      "state": "failed",
+      "try_number": 1,
+      "max_tries": 0,
+      "start_date": "2026-11-14T14:02:11.831100Z",
+      "end_date": "2026-11-14T14:02:17.769161Z",
+      "duration_seconds": 11.94
+    }
+  ]
+}
+
+### 3. Run details
+airflow_get_run_details -> success (153.02 ms)
+{
+  "dag_run_id": "manual__2026-11-14T14:01:34.922665+00:00",
+  "state": "failed",
+  "run_type": "manual",
+  "start_date": "2026-11-14T14:01:35.449982Z",
+  "end_date": "2026-11-14T14:02:18.901036Z",
+  "conf": {
+    "min_f1": 0.999
+  },
+  "dag_id": "training_pipeline",
+  "is_terminal": true,
+  "task_state_counts": {
+    "success": 4,
+    "failed": 1
+  },
+  "tasks": [
+    {
+      "task_id": "validate_dataset",
+      "state": "success",
+      "try_number": 1,
+      "max_tries": 0,
+      "start_date": "2026-11-14T14:01:36.139311Z",
+      "end_date": "2026-11-14T14:01:43.510035Z",
+      "duration_seconds": 14.37
+    },
+    {
+      "task_id": "preprocess_data",
+      "state": "success",
+      "try_number": 1,
+      "max_tries": 2,
+      "start_date": "2026-11-14T14:01:45.094236Z",
+      "end_date": "2026-11-14T14:01:51.061240Z",
+      "duration_seconds": 11.97
+    },
+    {
+      "task_id": "train_model",
+      "state": "success",
+      "try_number": 1,
+      "max_tries": 2,
+      "start_date": "2026-11-14T14:01:52.425937Z",
+      "end_date": "2026-11-14T14:01:59.200173Z",
+      "duration_seconds": 13.77
+    },
+    {
+      "task_id": "evaluate_and_log_mlflow",
+      "state": "success",
+      "try_number": 1,
+      "max_tries": 2,
+      "start_date": "2026-11-14T14:02:00.598214Z",
+      "end_date": "2026-11-14T14:02:11.149585Z",
+      "duration_seconds": 21.55
+    },
+    {
+      "task_id": "quality_gate",
+      "state": "failed",
+      "try_number": 1,
+      "max_tries": 0,
+      "start_date": "2026-11-14T14:02:11.831100Z",
+      "end_date": "2026-11-14T14:02:17.769161Z",
+      "duration_seconds": 11.94
+    }
+  ]
+}
+
+### 4. Failed tasks + diagnostics
+airflow_failed_tasks -> success (234.23 ms)
+{
+  "dag_id": "training_pipeline",
+  "dag_run_id": "manual__2026-11-14T14:01:34.922665+00:00",
+  "run_state": "failed",
+  "failed_count": 1,
+  "failed_tasks": [
+    {
+      "task_id": "quality_gate",
+      "state": "failed",
+      "try_number": 1,
+      "max_tries": 0,
+      "start_date": "2026-11-14T14:02:11.831100Z",
+      "end_date": "2026-11-14T14:02:17.769161Z",
+      "duration_seconds": 11.94,
+      "log_tail": [
+        "::group::Log message source details",
+        "::endgroup::",
+        "[info] DAG bundles loaded: dags-folder",
+        "[info] Filling up the DagBag from /home/shery/agentic-mlops-platform/dags/training_pipeline.py",
+        "[info] Stats instance was created in PID 99192 but accessed in PID 101987. Re-initializing.",
+        "[info] Tmp dir root location: /tmp",
+        "[info] Running command: ['/usr/bin/bash', '-c', \"cd '/home/shery/agentic-mlops-platform' && '/home/shery/agentic-mlops-platform/.venv/bin/python' training/pipeline_steps.py gate --min-f1 0.999\"]",
+        "[info] Output:",
+        "[info] {\"stage\": \"gate\", \"status\": \"failed\", \"message\": \"f1_macro 0.9700 is below the required minimum 0.999\", \"run_id\": \"67738bb21d0d4cc188f6abc701e0d3d7\", \"f1_macro\": 0.9699879951980792, \"min_f1\": 0.999}",
+        "[info] Command exited with return code 1",
+        "[error] Task failed with exception"
+      ]
+    }
+  ],
+  "first_failed_task": "quality_gate",
+  "note": "upstream_failed tasks never ran because a task before them failed"
+}

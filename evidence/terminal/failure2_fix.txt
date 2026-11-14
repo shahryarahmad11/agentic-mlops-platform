@@ -1,0 +1,17 @@
+$ dvc status
+train:
+	changed deps:
+		modified:           data/train.csv
+		modified:           training/train.py
+data/train.csv.dvc:
+	changed outs:
+		modified:           data/train.csv
+$ dvc checkout --force data/train.csv
+M       data/train.csv
+$ dvc status
+train:
+	changed deps:
+		modified:           data/train.csv
+		modified:           training/train.py
+$ wc -l data/train.csv
+1001 data/train.csv

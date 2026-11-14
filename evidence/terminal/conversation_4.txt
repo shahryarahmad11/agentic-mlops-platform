@@ -1,0 +1,24 @@
+
+################ Conversation 4: deployment_diagnosis
+you> Why is my prediction API unavailable?
+
+=== Answer  [req-0b9f0d6dd17a]
+The prediction API is unavailable because the application is failing to load its configured model file. Specifically, the pods are failing their readiness probes (returning HTTP 503) due to a missing model file error in the container logs: `[Errno 2] No such file or directory: '/app/model/model_v2.joblib'`. The ConfigMap `prediction-api-config` specifies `MODEL_PATH: /app/model/model_v2.joblib`, but that file does not exist inside the container.
+
+--- Facts (tool-backed)
+  * The prediction service has 0 ready endpoints and 0/2 ready replicas in the mlops namespace.  [k8s_diagnose_service]
+  * Container logs show model load failure: '[Errno 2] No such file or directory: '/app/model/model_v2.joblib''.  [k8s_diagnose_service]
+  * Readiness probes are failing with HTTP 503 because no endpoints are available for the service.  [k8s_diagnose_service]
+  * The ConfigMap 'prediction-api-config' is configured with MODEL_PATH set to '/app/model/model_v2.joblib'.  [k8s_diagnose_service]
+
+--- Uncertainties
+  ? Whether model_v2.joblib was omitted from the container image build or if it should be mounted via a volume/storage that is currently missing or misconfigured.
+
+--- Recommended actions
+  > Verify whether the model file name in the ConfigMap (`prediction-api-config`) needs to be corrected to match an existing model file in the image or volume.
+  > Check the container image build process to ensure model artifact files are correctly bundled or mounted.
+
+--- Tool trace (1 calls)
+  ok k8s_diagnose_service         success                     195 ms  
+
+(saved to evidence/conversation_4_deployment_diagnosis.json)

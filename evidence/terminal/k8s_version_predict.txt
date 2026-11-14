@@ -1,0 +1,37 @@
+$ kubectl -n mlops port-forward svc/prediction-api 18080:80 &
+$ curl -s localhost:18080/readyz
+{"status":"ready"}
+$ curl -s localhost:18080/version | python -m json.tool
+{
+    "app_version": "1.0.0",
+    "model_loaded": true,
+    "model_path": "/app/model/model.joblib",
+    "model": {
+        "mlflow_run_id": "a4ade6fe4fb94c65919aaee9af2c9d13",
+        "mlflow_run_name": "airflow-rf-n100-d5",
+        "mlflow_experiment_id": "2",
+        "model_uri": "models:/m-eca2f9b6bef145ec83e6504c012a7da3",
+        "metrics": {
+            "accuracy": 0.97,
+            "f1_macro": 0.969988
+        },
+        "params": {
+            "n_estimators": "100",
+            "max_depth": "5",
+            "seed": "42",
+            "test_size": "0.2",
+            "n_rows": "1000"
+        },
+        "dataset_version": "data-v2",
+        "dvc_md5": "3acbb1e7aee10825dc89fbc3216816ad",
+        "dataset_git_commit": "c57fc80a081163cfd6e8a72db9806ed161794b35",
+        "git_commit": "87efc717a733ee2b6d2fb0feb2b2caa3514f9392",
+        "quality_gate": "passed",
+        "airflow_run_id": "manual__2026-11-14T14:08:02.555354+00:00",
+        "exported_at": "2026-11-14T14:09:34.744179+00:00"
+    },
+    "load_error": null,
+    "uptime_seconds": 32.2
+}
+$ curl -s -X POST localhost:18080/predict -d '{"instances": [[0.5,-1.2,0.3,2.1,-0.7],[-1.0,0.4,1.5,-0.2,0.9]]}'
+{"predictions":[1,1],"model_run_id":"a4ade6fe4fb94c65919aaee9af2c9d13"}

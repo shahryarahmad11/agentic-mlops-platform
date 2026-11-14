@@ -1,0 +1,20 @@
+$ kubectl -n mlops get deploy,rs,pods,svc,endpointslices,configmap -o wide
+NAME                             READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS       IMAGES                 SELECTOR
+deployment.apps/prediction-api   2/2     2            2           39s   prediction-api   prediction-api:1.0.0   app.kubernetes.io/name=prediction-api
+
+NAME                                        DESIRED   CURRENT   READY   AGE   CONTAINERS       IMAGES                 SELECTOR
+replicaset.apps/prediction-api-7bc46dc47c   2         2         2       39s   prediction-api   prediction-api:1.0.0   app.kubernetes.io/name=prediction-api,pod-template-hash=7bc46dc47c
+
+NAME                                  READY   STATUS    RESTARTS   AGE   IP           NODE                  NOMINATED NODE   READINESS GATES
+pod/prediction-api-7bc46dc47c-c4t2j   1/1     Running   0          39s   10.244.0.6   mlops-control-plane   <none>           <none>
+pod/prediction-api-7bc46dc47c-snvn7   1/1     Running   0          39s   10.244.0.5   mlops-control-plane   <none>           <none>
+
+NAME                     TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE   SELECTOR
+service/prediction-api   ClusterIP   10.96.129.165   <none>        80/TCP    39s   app.kubernetes.io/name=prediction-api
+
+NAME                                                  ADDRESSTYPE   PORTS   ENDPOINTS               AGE
+endpointslice.discovery.k8s.io/prediction-api-lmgfj   IPv4          8000    10.244.0.5,10.244.0.6   39s
+
+NAME                              DATA   AGE
+configmap/kube-root-ca.crt        1      40s
+configmap/prediction-api-config   4      39s
